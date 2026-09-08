@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vocabulaire CPGE — Colles 2026/2027</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#687386;--accent:#315efb;--line:#e5e9f0}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:34px 22px 22px;background:linear-gradient(135deg,#172033,#315efb);color:white}
+header .wrap,main{max-width:1200px;margin:auto} h1{margin:0 0 8px;font-size:clamp(26px,4vw,42px)}
+header p{margin:0;opacity:.9}.controls{max-width:1200px;margin:18px auto;padding:0 22px;display:grid;grid-template-columns:1fr auto;gap:10px}
+input,select{padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:white;font-size:16px}
+nav{max-width:1200px;margin:0 auto;padding:0 22px 12px;display:flex;gap:8px;flex-wrap:wrap}
+nav button{border:1px solid #d7ddea;background:white;border-radius:999px;padding:9px 12px;cursor:pointer}
+nav button.active{background:var(--accent);color:white;border-color:var(--accent)}
+main{padding:10px 22px 50px}.top{display:flex;justify-content:space-between;gap:12px;align-items:end;margin:8px 0 14px}
+h2{margin:0}.count{color:var(--muted);font-size:14px}
+.table{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.row{display:grid;grid-template-columns:minmax(250px,1fr) minmax(260px,1.2fr) 90px;gap:14px;padding:11px 14px;border-bottom:1px solid var(--line);align-items:center}
+.row.head{font-weight:700;background:#eef2f8;position:sticky;top:0;z-index:1}
+.word{font-weight:700}.play{border:0;background:#eef2ff;color:#1d45c7;border-radius:10px;padding:8px 10px;cursor:pointer;font-weight:700}
+.play:active{transform:scale(.98)}.page{font-size:12px;color:var(--muted);margin-left:8px}
+.note{margin:14px 0;padding:14px 16px;background:white;border:1px solid var(--line);border-radius:14px;color:#4c5668}
+footer{max-width:1200px;margin:auto;padding:20px 22px 50px;color:var(--muted);font-size:13px}
+@media(max-width:700px){.controls{grid-template-columns:1fr}.row{grid-template-columns:1fr 1fr 70px}.row.head{display:none}.row>div:nth-child(2):before{content:"Traduction : ";font-weight:700}.row>div:nth-child(3){text-align:right}.page{display:block;margin:3px 0 0}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>Vocabulaire anglais — Colles 2026/2027</h1>
+<p>11 thèmes + l’article Gavin Newsom · traduction française · lecture directe en anglais britannique</p>
+</div></header>
+<div class="controls">
+<input id="search" placeholder="🔎 Rechercher un mot ou une traduction…" oninput="render()">
+<select id="voice" onchange="saveVoice()"><option value="">Voix UK automatique</option></select>
+</div>
+<nav id="nav"></nav>
+<main>
+<div class="note"><b>🔊 Audio :</b> clique directement sur le mot ou sur « ▶ UK ». Le site utilise la synthèse vocale intégrée au navigateur avec une voix <b>en-GB</b> quand l'appareil en propose une. Aucun mot ne redirige vers un autre site.</div>
+<div class="top"><h2 id="title"></h2><div class="count" id="count"></div></div>
+<div class="table">
+<div class="row head"><div>Mot / expression</div><div>Traduction</div><div>Audio</div></div>
+<div id="rows"></div>
+</div>
+</main>
+<footer>Source principale : le fichier « VOC COLLES 26 27.pdf » fourni dans cette conversation. Les pages sont des scans ; les entrées ont été extraites par OCR. Une petite vérification humaine des graphies OCR reste recommandée.</footer>
+<script src="data.js"></script>
+<script>
+let active="1", voices=[];
+const nav=document.getElementById("nav");
+function init(){
+  VOCAB_DATA.themes.forEach(t=>addTab(String(t.id),`Thème ${t.id} — ${t.name}`));
+  addTab("article",VOCAB_DATA.article.name);
+  populateVoices();
+  speechSynthesis.onvoiceschanged=populateVoices;
+  render();
+}
+function addTab(id,label){
+  const b=document.createElement("button"); b.textContent=label; b.dataset.id=id;
+  b.onclick=()=>{active=id;document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x===b));render()};
+  nav.appendChild(b);
+}
+function current(){
+  if(active==="article") return VOCAB_DATA.article;
+  return VOCAB_DATA.themes.find(x=>String(x.id)===active);
+}
+function populateVoices(){
+  voices=speechSynthesis.getVoices().filter(v=>/^en-GB\b/i.test(v.lang));
+  const sel=document.getElementById("voice"), old=localStorage.getItem("ukVoice")||"";
+  sel.innerHTML='<option value="">Voix UK automatique</option>';
+  voices.forEach(v=>{let o=document.createElement("option");o.value=v.name;o.textContent=v.name+" ("+v.lang+")";sel.appendChild(o)});
+  if(voices.some(v=>v.name===old)) sel.value=old;
+}
+function saveVoice(){localStorage.setItem("ukVoice",document.getElementById("voice").value)}
+function speak(text){
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="en-GB"; u.rate=.88;
+  const wanted=document.getElementById("voice").value;
+  const v=voices.find(x=>x.name===wanted)||voices[0];
+  if(v) u.voice=v;
+  speechSynthesis.speak(u);
+}
+function render(){
+  const q=document.getElementById("search").value.toLowerCase().trim();
+  const c=current(); document.getElementById("title").textContent=c.name;
+  let entries=c.entries.filter(e=>(e.en+" "+e.fr).toLowerCase().includes(q));
+  document.getElementById("count").textContent=entries.length+" entrée(s)";
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.id===active));
+  const rows=document.getElementById("rows"); rows.innerHTML="";
+  entries.forEach(e=>{
+    const r=document.createElement("div"); r.className="row";
+    const w=document.createElement("div"); w.className="word";
+    const wb=document.createElement("button"); wb.className="play"; wb.textContent=e.en; wb.onclick=()=>speak(e.en);
+    w.appendChild(wb); if(e.page){const p=document.createElement("span");p.className="page";p.textContent="p. "+e.page;w.appendChild(p)}
+    const fr=document.createElement("div"); fr.textContent=e.fr;
+    const a=document.createElement("div"); const ab=document.createElement("button");ab.className="play";ab.textContent="▶ UK";ab.onclick=()=>speak(e.en);a.appendChild(ab);
+    r.append(w,fr,a);rows.appendChild(r);
+  });
+}
+init();
+</script>
+</body></html>
