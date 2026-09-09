@@ -1,0 +1,1 @@
+Site statique GitHub Pages. Remplace index.html et data.js. Interface responsive PC/tablette/mobile, recherche, 11 thèmes + article, compteur GoatCounter et sélection des voix en-GB disponibles sur l’appareil.
